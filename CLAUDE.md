@@ -218,7 +218,18 @@ scripts/           ← programas da Fase 1
   - **Para a revisão:** a NPT 028 de 2014 (vigente até 24/04/2027) é substituída pela NPT 028 nova, que foi dividida em 3 partes. O programa não liga as duas sozinho. Preencher à mão `substituida_por = npt-028-p1_2027-04|npt-028-p2_2027-04|npt-028-p3_2027-04`.
 - **Fase 1: Etapas 0, 1 e 2 concluídas.** A Etapa 3 (revisão do catálogo) ficou **adiada**. Nenhuma linha está marcada como `revisado = sim`.
 - **Ajustes no catálogo:** `npt-028_2014-10` tem `substituida_por` = as 3 partes da NPT 028 nova. `npt-001-p3` tem na observação o link do PDF antigo.
-- **Prioridade atual: protótipo** (ver seção "Protótipo"). Passo 0 concluído. Próximo: **Passo 1** (`baixar_pdfs.py`).
+- **Prioridade atual: protótipo** (ver seção "Protótipo").
+- **Protótipo, Passo 1 concluído (18/11/2026):** `scripts/baixar_pdfs.py` criado.
+  - **91 documentos baixados**, sem erros: 87 PDFs (cerca de 115 MB) e 4 páginas de leis, decretos e resoluções. As 4 `pendente` ficaram de fora por não terem link. `conferir_catalogo.py` termina com 0 erros.
+  - **Opções:**
+    - `--somente <ids>` baixa só os ids indicados;
+    - `--reverificar` baixa de novo e avisa se o arquivo mudou.
+  - **Como ele funciona:**
+    - pula o que já foi baixado;
+    - recusa um "PDF" que não comece com `%PDF`;
+    - em linhas `revisado = sim`, só preenche as colunas vazias.
+  - **Detalhe:** as páginas do legislacao.pr.gov.br trazem um código de sessão (`;jsessionid=...`) que muda a cada visita. O programa o apaga antes de salvar e de calcular o hash, para não acusar uma mudança falsa.
+- **Próximo: Passo 2** (`.venv` com pdfplumber e streamlit, e `requirements.txt`).
 
 ## Como rodar os programas (PowerShell, dentro da pasta do projeto)
 
@@ -227,4 +238,6 @@ cd "$HOME\OneDrive\Documentos\Normas_CBMPR"
 python scripts\listar_normas.py                 # baixa a página e atualiza dados\catalogo.csv
 python scripts\listar_normas.py --copia-local   # plano B: usa dados\fontes\legislacao.html
 python scripts\conferir_catalogo.py             # lista erros e avisos do catálogo (não altera nada)
+python scripts\baixar_pdfs.py                   # baixa o que falta (PDFs e páginas das leis)
+python scripts\baixar_pdfs.py --reverificar     # baixa de novo e avisa se algum arquivo mudou no site
 ```
