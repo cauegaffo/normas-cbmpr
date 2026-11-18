@@ -2,11 +2,11 @@
 SPDA;sistema de proteção contra descargas atmosféricas|para-raios|para-raio
 GLP;gás liquefeito de petróleo|gás de cozinha|botijão|central de GLP
 iluminação de emergência;sistema de iluminação de emergência|luz de emergência|luminária de emergência|bloco autônomo
-hidrante;sistema de hidrantes|hidrantes e mangotinhos|mangotinho|SHP
-mangotinho;sistema de mangotinhos|hidrantes e mangotinhos|hidrante
+hidrante;sistema de hidrantes|hidrantes e mangotinhos|SHP
+mangotinho;sistema de mangotinhos|hidrantes e mangotinhos
 chuveiros automáticos;sprinkler|sprinklers|SPK|sistema de chuveiros automáticos
-extintor;extintor de incêndio|aparelho extintor|extintores portáteis|extintores sobre rodas
-brigada de incêndio;brigada|brigadista|bombeiro civil
+extintor;extintor de incêndio|aparelho extintor|extintores portáteis|extintores sobre rodas|extintores sobrerrodas
+brigada de incêndio;brigada|brigadista
 saída de emergência;rota de fuga|saídas de emergência|escada de emergência
 alarme de incêndio;sistema de detecção e alarme|detecção de incêndio|acionador manual
 CSCIP;Código de Segurança Contra Incêndio e Pânico

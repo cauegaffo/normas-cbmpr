@@ -15,6 +15,9 @@ dados/pdfs/
 # Páginas do site salvas manualmente no navegador
 dados/fontes/
 
+# Páginas de leis, decretos e resoluções baixadas do legislacao.pr.gov.br
+dados/paginas/
+
 # ==============================
 # Ambientes virtuais do Python
 # ==============================

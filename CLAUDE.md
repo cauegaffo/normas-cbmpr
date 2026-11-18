@@ -47,13 +47,16 @@ Criar uma ferramenta web para **buscar e consultar a legislação de prevenção
 3. **Simplicidade:** preferir sempre a solução mais simples que resolva o problema.
 4. **Pequenas etapas testáveis:** executar **uma etapa por vez** e **parar ao final de cada uma** para o dono testar antes de seguir.
 5. **Commits:** ao final de cada etapa testada, fazer um commit e atualizar a "Situação atual".
+6. **Idioma:** responder **sempre em português**, inclusive nas mensagens de progresso.
 
 ## Normas e versões
 
 - **O que entra (baixar e indexar):** versões vigentes, futuras (ainda não vigentes) e revogadas/anteriores, de leis, decretos, portarias (ex.: Portaria 476/2025), CSCIP, NPA, NPT e orientações técnicas.
-- **Consultas públicas:** não baixar. Ficam só no catálogo, com `baixar = não`.
+- **Consultas públicas:** ficam **de fora** (nem no catálogo).
+- **Leis, decretos e resoluções** (ex.: Lei 19.449, Lei 13.976, Decreto 11.868, Resolução SESP 399/2020): não são PDF. O texto é capturado das páginas do site **legislacao.pr.gov.br** e a referência é **por artigo**, porque não há número de página.
+- **Revogadas sem link** (ex.: NPT 001 Parte 2, NPT 004): entram no catálogo com situação **`pendente`** e sem link. Os arquivos serão procurados depois.
 - **Cada versão** tem data de **início** e de **fim de vigência** e, quando houver, a indicação de **qual versão a substituiu**. Motivo: edificações antigas, existentes e novas podem seguir legislações diferentes, então é preciso filtrar "normas vigentes em uma data".
-- **A situação é calculada pelas datas**, e não digitada (vigente / futura / revogada / consulta_publica). Uma norma futura passa a vigente sozinha quando chega a data.
+- **A situação é calculada pelas datas**, e não digitada (vigente / futura / revogada). A exceção é `pendente`: norma conhecida, mas ainda sem arquivo. Uma norma futura passa a vigente sozinha quando chega a data.
 - **Cuidado:** a data que aparece no link do PDF (ex.: `/2026-08/`) é a data do envio ao site, **não** a da versão.
 
 ### Catálogo (`dados/catalogo.csv`)
@@ -72,8 +75,9 @@ dados/
   catalogo.csv     ← vai para o GitHub
   estado.json      ← vai para o GitHub (data da última verificação)
   sinonimos.csv    ← vai para o GitHub
-  fontes/          ← páginas do site salvas no navegador (fora do GitHub)
-  pdfs/<tipo>/<id>.pdf   ← fora do GitHub (cscip, leis, decretos, portarias, npa, npt, ot)
+  fontes/          ← plano B: página do site salva no navegador (fora do GitHub)
+  pdfs/<tipo>/<id>.pdf   ← fora do GitHub (cscip, portarias, npa, npt, ot)
+  paginas/<id>.html      ← leis, decretos e resoluções do legislacao.pr.gov.br (fora do GitHub)
   texto/<id>.jsonl ← texto extraído (decidir na Etapa 8 se vai para o GitHub)
 scripts/           ← programas da Fase 1
 ```
@@ -93,11 +97,10 @@ scripts/           ← programas da Fase 1
   - links novos ou que sumiram da página;
   - mudança no `hash_sha256`, a "impressão digital" do conteúdo, que revela um PDF trocado no mesmo link (opção `--reverificar`).
 - **Primeiro, modo semiautomático:**
-  1. o dono salva a página no navegador;
-  2. roda `listar_normas.py`;
-  3. revisa as linhas novas;
-  4. roda `baixar_pdfs.py`.
-- **Depois, GitHub Actions** (rodar sozinho na nuvem). **Limitação conhecida:** a página de legislação bloqueia programas (erro 403) e provavelmente vai bloquear o GitHub também. Os PDFs não são bloqueados.
+  1. o dono roda `listar_normas.py`, que **baixa sozinho** a página https://www.bombeiros.pr.gov.br/Prevencao. **Plano B:** se o download falhar, o programa usa a página salva manualmente em `dados/fontes/legislacao.html`;
+  2. revisa as linhas novas;
+  3. roda `baixar_pdfs.py`.
+- **Depois, GitHub Actions** (rodar sozinho na nuvem). Em 18/11/2026, a página `/Prevencao` **abriu normalmente para programas** (status 200), assim como os PDFs, então o GitHub Actions parece viável. Se o site passar a bloquear, volta-se a salvar a página manualmente em `dados/fontes/`.
 - **O aplicativo mostra** a data da última verificação.
 
 ## Extração do texto (segunda parte da Fase 1)
@@ -121,10 +124,10 @@ scripts/           ← programas da Fase 1
 
 1. **Extração:** baixar os PDFs e extrair o texto, separado por norma, versão, item e página. Etapas:
    - **0.** Registrar as decisões, criar o `sinonimos.csv` e ajustar o `.gitignore`.
-   - **1.** O dono salva as páginas de legislação do site em `dados/fontes/`.
-   - **2.** `scripts/listar_normas.py` monta e atualiza o catálogo. `scripts/conferir_catalogo.py` aponta os problemas.
+   - **1.** Conferir a lista de links da página de legislação (feito em 18/11/2026).
+   - **2.** `scripts/listar_normas.py` baixa a página, com o plano B da cópia manual, e monta e atualiza o catálogo, incluindo as leis, decretos e resoluções do legislacao.pr.gov.br e as linhas `pendente`. `scripts/conferir_catalogo.py` aponta os problemas.
    - **3.** O dono revisa o catálogo.
-   - **4.** `scripts/baixar_pdfs.py` baixa os PDFs, com hash e opção `--reverificar`.
+   - **4.** `scripts/baixar_pdfs.py` baixa os PDFs e as páginas das leis e decretos, com hash e opção `--reverificar`.
    - **5.** Completar as datas de vigência e as substituições, com sugestões tiradas da primeira página dos PDFs.
    - **6.** Criar o ambiente virtual `.venv` e testar o pdfplumber no Python 3.15.
    - **7.** `scripts/diagnosticar_pdfs.py` conta as páginas e detecta os PDFs escaneados.
@@ -151,9 +154,18 @@ scripts/           ← programas da Fase 1
 
 - Repositório Git criado (ramo `main`), com identidade local `cauegaffo` (e-mail privado do GitHub).
 - **Site do CBMPR:**
-  - a página de legislação **bloqueia programas** (erro 403), por isso o dono a salva manualmente no navegador;
-  - os **links diretos dos PDFs funcionam** em programas;
-  - a página existe em dois endereços, cujas listas podem ser diferentes:
-    - https://www.bombeiros.pr.gov.br/Pagina/Legislacao-de-Prevencao-e-Combate-Incendios-e-Desastres
-    - https://www.bombeiros.pr.gov.br/PrevFogo/Pagina/Legislacao-de-Prevencao-e-Combate-Incendios-e-Desastres
-- **Fase 1, Etapa 0 concluída.** Próximo passo: **Etapa 1** (o dono salva as páginas em `dados/fontes/`).
+  - **página correta das legislações:** https://www.bombeiros.pr.gov.br/Prevencao (seção `#legislacao`). Cópia manual (plano B): `dados/fontes/legislacao.html`;
+  - essa página **abre para programas** (testado em 18/11/2026), e os PDFs também;
+  - os endereços `/Pagina/Legislacao-...` e `/PrevFogo/Pagina/Legislacao-...` **não servem** (não abrem no navegador e dão erro 403).
+- **Conferência da Etapa 1 (18/11/2026)**, feita numa cópia baixada da página:
+  - **91 links de PDF**, sem repetição: 87 de legislação e 4 "Modelos de documentação", que não são normas;
+  - **por tipo:** CSCIP 2, portarias 2 (476/2025 e 443/2024), NPA 5, NPT 59 (contando as partes das NPTs 015, 025, 027 e 028), OT 19;
+  - **leis e decretos** (Lei 19.449, Lei 13.976, Decreto 11.868, Resolução SESP 399/2020) não são PDF: apontam para páginas do site legislacao.pr.gov.br;
+  - **revogadas sem link:** NPT 001 Parte 2 e NPT 004 (incorporadas à NPA 002) → entram como `pendente`;
+  - **nenhuma consulta pública** aparece nesta página.
+- **A confirmar:**
+  - **NPT 001 Partes 1 e 3:** não aparecem na página. Não se sabe se foram revogadas ou se só ficaram de fora. Por ora, `pendente`.
+  - **CSCIP "Agosto de 2021":** o arquivo se chama "versao_final_agosto_de_2023", foi criado em 20/03/2023 e tem 51 páginas. Pode ser o texto de 2021 consolidado em 2023. Conferir o conteúdo na Etapa 6.
+  - **NPT 041:** o link aponta para "anexo_2_errata…", um arquivo criado em 28/10/2022 com 11 páginas. Parece ser a norma inteira com a errata, e não só a errata. Conferir na Etapa 6.
+  - O texto desses PDFs está codificado: sem uma biblioteca de PDF (pdfplumber, Etapa 6), não dá para lê-lo.
+- **Fase 1: Etapas 0 e 1 concluídas.** Próximo passo: **Etapa 2** (`listar_normas.py` e `conferir_catalogo.py`).
