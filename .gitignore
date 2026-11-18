@@ -12,6 +12,9 @@
 # ==============================
 dados/pdfs/
 
+# Páginas do site salvas manualmente no navegador
+dados/fontes/
+
 # ==============================
 # Ambientes virtuais do Python
 # ==============================
