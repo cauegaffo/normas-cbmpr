@@ -28,7 +28,7 @@ Criar uma ferramenta web para **buscar e consultar a legislação de prevenção
 | Login e histórico | Supabase |
 | IA | Plugável — trocar de provedor deve exigir só mudar a configuração. Começar com **Google Gemini (plano gratuito)** |
 | Leitura de PDFs | pdfplumber (a confirmar no Python 3.15) |
-| Versionamento e publicação | Git e GitHub |
+| Versionamento e publicação | Git e GitHub (repositório privado https://github.com/cauegaffo/normas-cbmpr) |
 
 **Chave da IA:** cada usuário cadastra a própria chave do Gemini. Ela fica **criptografada** no banco e **nunca é exibida novamente** depois de salva.
 
@@ -192,6 +192,9 @@ scripts/           ← programas da Fase 1
 ## Situação atual
 
 - Repositório Git criado (ramo `main`), com identidade local `cauegaffo` (e-mail privado do GitHub).
+- **Repositório no GitHub (privado):** https://github.com/cauegaffo/normas-cbmpr. É o remoto `origin`, e o `main` acompanha `origin/main`.
+  - **Primeiro envio em 18/11/2026.** Antes do envio foi conferido que não havia PDFs, páginas baixadas, banco de busca, `.venv` nem segredos em todo o histórico.
+  - **Para enviar commits novos:** `git push`.
 - **Site do CBMPR:**
   - **página correta das legislações:** https://www.bombeiros.pr.gov.br/Prevencao (seção `#legislacao`). Cópia manual (plano B): `dados/fontes/legislacao.html`;
   - essa página **abre para programas** (testado em 18/11/2026), e os PDFs também;
