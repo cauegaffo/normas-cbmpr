@@ -19,6 +19,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent / "scripts"))
 import busca  # noqa: E402
 
 LIMITE = 50
+MAX_BOTOES = 12          # normas mostradas como botões; as demais vão para "Outras normas"
+NENHUMA = "__nenhuma__"  # opção vazia da lista "Outras normas"
 SITE_OFICIAL = "https://www.bombeiros.pr.gov.br/Prevencao"
 ORDEM_TIPOS = list(busca.NOMES_TIPOS)
 
@@ -103,6 +105,45 @@ def mostrar_resultado(conexao, r):
             coluna_link.link_button(rotulo, r["link"])
 
 
+def rotulo_norma(n):
+    versao = f" ({n['versao']})" if n["versao"] else ""
+    return f"{n['norma']}{versao}"
+
+
+def mostrar_resumo_normas(resultado, chave_filtro, chave_botoes, chave_outras):
+    """Resumo "Normas encontradas": botões para as 12 primeiras e uma lista para as demais.
+    É um filtro só: escolher num lugar limpa o outro."""
+    normas = resultado["normas"]
+    principais, outras = normas[:MAX_BOTOES], normas[MAX_BOTOES:]
+    rotulos = {n["id"]: f"{rotulo_norma(n)} · {n['quantidade']} trecho(s)" for n in normas}
+
+    def escolheu_botao():
+        st.session_state[chave_filtro] = st.session_state.get(chave_botoes)
+        if outras:
+            st.session_state[chave_outras] = NENHUMA
+
+    def escolheu_outra():
+        valor = st.session_state.get(chave_outras)
+        st.session_state[chave_filtro] = None if valor == NENHUMA else valor
+        st.session_state[chave_botoes] = None
+
+    parcial = " (contagem parcial: busca muito ampla)" if resultado["limitado"] else ""
+    st.markdown(f"**Normas encontradas:** {len(normas)}{parcial}. Clique numa norma para ver só os "
+                "trechos dela; clique de novo para ver todas.")
+    st.pills(
+        "Normas encontradas", options=[n["id"] for n in principais], format_func=rotulos.get,
+        selection_mode="single", key=chave_botoes, on_change=escolheu_botao,
+        label_visibility="collapsed",
+    )
+    if outras:
+        opcoes = [NENHUMA] + [n["id"] for n in outras]
+        st.selectbox(
+            f"Outras normas ({len(outras)})", options=opcoes,
+            format_func=lambda i: "(nenhuma)" if i == NENHUMA else rotulos[i],
+            key=chave_outras, on_change=escolheu_outra,
+        )
+
+
 def main():
     st.set_page_config(page_title="Normas CBMPR — busca", page_icon="🔥", layout="wide")
     st.title("Busca nas normas de prevenção do CBMPR")
@@ -134,7 +175,7 @@ def main():
     )
 
     # --- Busca e filtros --------------------------------------------------------
-    texto = st.text_input("O que você procura?", placeholder="ex.: saída de emergência")
+    texto = st.text_input("O que você procura?", placeholder='ex.: saída de emergência  ou  "rota de fuga"')
     coluna1, coluna2, coluna3 = st.columns([3, 2, 2])
     tipos = coluna1.multiselect(
         "Tipo de norma", options=ORDEM_TIPOS, format_func=lambda t: busca.NOMES_TIPOS[t],
@@ -142,25 +183,55 @@ def main():
     )
     ordem = coluna2.radio("Ordenar por", ["Relevância", "Norma"], horizontal=True)
     incluir_todas = coluna3.checkbox("Incluir revogadas e futuras", value=False)
+    usar_sinonimos = coluna3.checkbox("Usar sinônimos", value=True)
 
     if not texto.strip():
         st.info("Digite uma ou mais palavras. A busca ignora acentos e aceita o começo "
-                "da palavra (ex.: **hidrant** acha *hidrante* e *hidrantes*).")
+                "da palavra (ex.: **hidrant** acha *hidrante* e *hidrantes*). "
+                'Use aspas para uma frase exata (ex.: **"saída de emergência"**). '
+                "Com **Usar sinônimos**, a busca também procura termos equivalentes "
+                "(ex.: *sprinkler* = *chuveiros automáticos*), com peso menor.")
         return
 
-    resultados = busca.buscar(conexao, texto, tipos, incluir_todas, LIMITE,
-                              marca_inicio=MARCA_INICIO, marca_fim=MARCA_FIM)
-    if ordem == "Norma":
-        resultados.sort(key=chave_por_norma)
+    # Filtro por norma: guardado com uma chave que depende da busca. Mudou o texto, os
+    # sinônimos, "revogadas e futuras" ou os tipos? A chave muda e o filtro volta para "todas".
+    chave = repr((texto.strip(), usar_sinonimos, incluir_todas, sorted(tipos)))
+    chave_filtro, chave_botoes, chave_outras = (f"filtro|{chave}", f"botoes|{chave}", f"outras|{chave}")
+    filtro = st.session_state.get(chave_filtro)
 
-    if not resultados:
+    def pesquisar(versao_id):
+        return busca.buscar(conexao, texto, tipos, incluir_todas, LIMITE,
+                            marca_inicio=MARCA_INICIO, marca_fim=MARCA_FIM,
+                            usar_sinonimos=usar_sinonimos, versao_id=versao_id)
+
+    resultado = pesquisar(filtro)
+    ids_no_resumo = [n["id"] for n in resultado["normas"]]
+    if filtro and filtro not in ids_no_resumo:
+        # A norma escolhida não está mais no resumo: volta para "todas", sem erro.
+        filtro = None
+        st.session_state[chave_filtro] = None
+        resultado = pesquisar(None)
+
+    for digitado, sinonimos in resultado["sinonimos_usados"].items():
+        st.caption(f"Sinônimos usados: **{digitado}** → {', '.join(sinonimos)}")
+
+    if not resultado["normas"]:
         dica = "" if incluir_todas else " Tente marcar **Incluir revogadas e futuras**."
         st.info(f"Nenhum trecho encontrado.{dica}")
         return
 
-    aviso_limite = f" (os {LIMITE} mais relevantes)" if len(resultados) == LIMITE else ""
-    st.subheader(f"{len(resultados)} trecho(s) encontrado(s){aviso_limite}")
-    for r in resultados:
+    mostrar_resumo_normas(resultado, chave_filtro, chave_botoes, chave_outras)
+
+    trechos = resultado["trechos"]
+    if ordem == "Norma":
+        trechos.sort(key=chave_por_norma)
+    aviso_limite = f" (os {LIMITE} mais relevantes)" if len(trechos) == LIMITE else ""
+    if filtro:
+        norma = next(n for n in resultado["normas"] if n["id"] == filtro)
+        st.subheader(f"{len(trechos)} trecho(s) de {rotulo_norma(norma)}{aviso_limite}")
+    else:
+        st.subheader(f"{len(trechos)} trecho(s) encontrado(s){aviso_limite}")
+    for r in trechos:
         mostrar_resultado(conexao, r)
 
 

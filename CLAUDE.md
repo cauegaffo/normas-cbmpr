@@ -75,7 +75,8 @@ Criar uma ferramenta web para **buscar e consultar a legislação de prevenção
 - PDFs escaneados não entram na busca (sem OCR).
 - Cabeçalhos e rodapés podem aparecer nos trechos.
 - A divisão em itens pode errar.
-- A busca não entende variações além do começo da palavra e ainda não usa o `sinonimos.csv`.
+- A busca não entende variações além do começo da palavra e dos sinônimos do `sinonimos.csv` (que ainda tem só 14 grupos).
+- A ordenação das normas pela **soma** favorece normas com muitos trechos (CSCIP, NPT 012). Ver o Item 2 na "Situação atual".
 - Leis e decretos ficam sem número de página.
 - As datas de vigência estão incompletas: normas sem data aparecem como vigentes.
 
@@ -284,7 +285,31 @@ scripts/           ← programas da Fase 1
     - com o `AppTest` do Streamlit: buscas, filtros, selos, uma lei e caracteres especiais (`R$`);
     - o servidor sobe e responde.
   - **Falta:** o dono abrir e testar a tela.
-- **Próximo:** o dono testa o protótipo no dia a dia.
+- **Item 1 (atalho de dois cliques):** concluído (`abrir_ferramenta.bat` e o atalho na Área de Trabalho).
+- **Item 2 (melhorar a busca), concluído em 18/11/2026:**
+  - **Frase exata entre aspas:** sem `*` e sem sinônimos.
+  - **Sinônimos** do `sinonimos.csv`, ligados por padrão e com uma caixa na tela para desligar:
+    - funcionam nos dois sentidos;
+    - a expressão mais longa ganha, e cada palavra digitada entra em no máximo um grupo;
+    - siglas de até 3 letras só valem com a palavra inteira e entram sem `*`.
+  - **Pontuação em `pontos = -bm25`** (positivo, maior é melhor), com fatores sobre `pontos`:
+    - trecho achado só por sinônimo: × 0,5 sobre o bm25 da busca com sinônimos. Se o trecho contém o texto digitado, vale o bm25 da busca só com o texto;
+    - título com as palavras digitadas: × 2;
+    - trecho curto: × 0,5;
+    - pontilhado: × 0,5;
+    - norma: × (1 + soma da norma ÷ maior soma).
+  - **Resumo "Normas encontradas"**, pela soma dos pontos:
+    - 12 botões (`st.pills`) e a lista "Outras normas";
+    - um filtro só, com uma chave que depende do texto, dos sinônimos, de "revogadas e futuras" e dos tipos.
+  - **`dados/gabarito.csv`:** 15 casos. Os 3 primeiros são "de ajuste" e os outros 12 são "novos". O dono vai acrescentar casos reais.
+  - **`scripts/avaliar_busca.py`:** opções `--salvar`, `--comparar` e `--sem-sinonimos`.
+  - **Resultado (antes → depois):**
+    - **ajuste:** NPT 022 em "hidrante" passou de 2º para 1º na lista de normas, e o 1º trecho dela de 7º para 1º;
+    - **novos:** em 1º na lista continuam 11 de 15. O 1º trecho no top 3 passou de 11 para 12, mas a posição média piorou (2,3 → 3,6);
+    - **melhorou:** "sprinkler", com a NPT 023 de 3º para 1º;
+    - **pioraram:** "guarda-corpo" (a NPT 012, com 17 trechos, passou à frente; o 1º trecho da NPT 011 foi de 6º para 17º; a OT 001/2017 foi de 1º para 3º na lista) e "chuveiros automáticos" (o CSCIP passou à frente da NPT 024; o 1º trecho dela foi de 7º para 14º).
+  - **A decidir pelo dono:** se a regra "soma por norma" deve ser suavizada.
+- **Próximo:** o dono testa o protótipo no dia a dia e decide sobre a regra de soma.
 
 ## Como rodar os programas (PowerShell, dentro da pasta do projeto)
 
@@ -298,7 +323,10 @@ python scripts\baixar_pdfs.py --reverificar     # baixa de novo e avisa se algum
 .\.venv\Scripts\python.exe scripts\extrair_texto.py   # gera dados\texto\<id>.jsonl (texto por item e página)
 .\.venv\Scripts\python.exe scripts\extrair_texto.py --somente npt-022_2015-03   # só os ids indicados
 python scripts\indexar.py                       # monta dados\busca.sqlite (rodar depois de extrair)
-python scripts\busca.py "saída de emergência"   # busca no terminal (--limite 10, --tipo npt, --todas)
+python scripts\busca.py "saída de emergência"   # busca no terminal (--limite 10, --tipo npt, --todas, --sem-sinonimos, --norma <id>)
+python scripts\avaliar_busca.py                 # mede a busca com o dados\gabarito.csv
+python scripts\avaliar_busca.py --salvar antes.json        # guarda o resultado...
+python scripts\avaliar_busca.py --comparar antes.json      # ...e compara depois de uma mudança
 .\.venv\Scripts\python.exe -m streamlit run app.py   # abre a tela de busca no navegador (Ctrl+C para fechar)
 ```
 
