@@ -268,7 +268,20 @@ scripts/           ← programas da Fase 1
     - "iluminação de emergência" traz a NPT 018 e a OT 001/2025;
     - "saída de emergência" traz a NPT 011;
     - "hidrante" traz a NPT 034 (Hidrante Urbano) e, logo depois, a NPT 022.
-- **Próximo: Passo 5** (`app.py` no Streamlit).
+- **Protótipo, Passo 5 concluído (18/11/2026):** `app.py` (Streamlit) criado.
+  - **O que a tela tem:**
+    - avisos de "ferramenta não oficial" e de "catálogo ainda não revisado";
+    - data da última verificação e da indexação;
+    - busca, filtro por tipo, "Incluir revogadas e futuras" (desmarcada) e ordem por relevância ou por norma;
+    - nos resultados: norma, versão, situação, item, página e trecho com as palavras em negrito;
+    - "Ver o trecho completo" e um botão para o PDF oficial em `#page=N`. Nas leis, o botão abre a versão "Compilado";
+    - selo vermelho REVOGADA (com o fim da vigência e a substituta) e aviso laranja "AINDA NÃO VIGENTE" (com a data de início).
+  - **Mostra até 50 trechos.** A ordem "por norma" reorganiza esses 50 mais relevantes.
+  - **Testes (feitos por Claude):**
+    - com o `AppTest` do Streamlit: buscas, filtros, selos, uma lei e caracteres especiais (`R$`);
+    - o servidor sobe e responde.
+  - **Falta:** o dono abrir e testar a tela.
+- **Próximo:** o dono testa o protótipo no dia a dia.
 
 ## Como rodar os programas (PowerShell, dentro da pasta do projeto)
 
@@ -283,4 +296,5 @@ python scripts\baixar_pdfs.py --reverificar     # baixa de novo e avisa se algum
 .\.venv\Scripts\python.exe scripts\extrair_texto.py --somente npt-022_2015-03   # só os ids indicados
 python scripts\indexar.py                       # monta dados\busca.sqlite (rodar depois de extrair)
 python scripts\busca.py "saída de emergência"   # busca no terminal (--limite 10, --tipo npt, --todas)
+.\.venv\Scripts\python.exe -m streamlit run app.py   # abre a tela de busca no navegador (Ctrl+C para fechar)
 ```
