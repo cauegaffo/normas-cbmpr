@@ -296,8 +296,7 @@ scripts/           ← programas da Fase 1
     - trecho achado só por sinônimo: × 0,5 sobre o bm25 da busca com sinônimos. Se o trecho contém o texto digitado, vale o bm25 da busca só com o texto;
     - título com as palavras digitadas: × 2;
     - trecho curto: × 0,5;
-    - pontilhado: × 0,5;
-    - norma: × (1 + soma da norma ÷ maior soma).
+    - pontilhado: × 0,5.
   - **Resumo "Normas encontradas"**, pela soma dos pontos:
     - 12 botões (`st.pills`) e a lista "Outras normas";
     - um filtro só, com uma chave que depende do texto, dos sinônimos, de "revogadas e futuras" e dos tipos.
@@ -308,8 +307,12 @@ scripts/           ← programas da Fase 1
     - **novos:** em 1º na lista continuam 11 de 15. O 1º trecho no top 3 passou de 11 para 12, mas a posição média piorou (2,3 → 3,6);
     - **melhorou:** "sprinkler", com a NPT 023 de 3º para 1º;
     - **pioraram:** "guarda-corpo" (a NPT 012, com 17 trechos, passou à frente; o 1º trecho da NPT 011 foi de 6º para 17º; a OT 001/2017 foi de 1º para 3º na lista) e "chuveiros automáticos" (o CSCIP passou à frente da NPT 024; o 1º trecho dela foi de 7º para 14º).
-  - **A decidir pelo dono:** se a regra "soma por norma" deve ser suavizada.
-- **Próximo:** o dono testa o protótipo no dia a dia e decide sobre a regra de soma.
+  - **Opção A (decisão do dono, 18/11/2026):** a soma por norma **só ordena o resumo** "Normas encontradas". O fator "× (1 + soma da norma ÷ maior soma)" nos trechos foi **retirado**.
+    - **Resultado:** os casos novos voltaram ao nível do "antes" (média do 1º trecho de 2,5; antes 2,3; com o fator, 3,6). "guarda-corpo" (NPT 011) voltou ao 6º lugar, e "chuveiros automáticos" (NPT 024) ao 7º.
+    - **Custo:** em "hidrante", a NPT 022 está em **1º no resumo**, mas o 1º trecho dela voltou ao **7º lugar** na lista de trechos. Os 6 primeiros são da NPT 034. Para chegar à NPT 022, use o botão dela no resumo.
+- **Próximo:**
+  - o dono valida as normas esperadas dos 12 casos novos do gabarito, que foram escolhidas por Claude;
+  - o dono testa o protótipo no dia a dia.
 
 ## Como rodar os programas (PowerShell, dentro da pasta do projeto)
 

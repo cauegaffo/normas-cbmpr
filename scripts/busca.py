@@ -57,8 +57,10 @@ PESO_SINONIMO = 0.5      # trecho achado SÓ por sinônimo
 PESO_TITULO = 2.0        # o título da norma tem todas as palavras digitadas
 PESO_TRECHO_CURTO = 0.5  # trecho com menos de 100 caracteres (ex.: só um título)
 PESO_PONTILHADO = 0.5    # trecho com pontilhado (sumário ou checklist)
-# Regra por norma: cada trecho é multiplicado por (1 + soma da norma / maior soma),
-# um fator entre 1 e 2, para que os trechos da norma principal do assunto subam.
+# Resumo por norma: as normas são ordenadas pela SOMA dos pontos dos seus trechos.
+# Essa soma NÃO altera a ordem dos trechos (decisão de 18/11/2026, "opção A"): um fator
+# "x (1 + soma da norma / maior soma)" nos trechos foi testado e piorou os casos novos
+# do gabarito, porque normas com muitos trechos (CSCIP, NPT 012) passavam à frente.
 
 # A situação é calculada na hora, pelas datas (igual a catalogo.calcular_situacao).
 SITUACAO_SQL = """
@@ -384,10 +386,8 @@ def buscar(conexao, texto, tipos=None, incluir_todas=False, limite=50,
         resultados.append(r)
 
     normas = resumir_normas(resultados)
-    maior = normas[0]["pontos"] if normas and normas[0]["pontos"] > 0 else 1.0
-    soma = {n["id"]: n["pontos"] for n in normas}
     for r in resultados:
-        r["relevancia"] = r["pontos_trecho"] * (1 + soma[r["id"]] / maior)
+        r["relevancia"] = r["pontos_trecho"]   # a soma por norma só ordena o resumo
     resultados.sort(key=lambda r: r["relevancia"], reverse=True)
 
     if versao_id:
