@@ -49,6 +49,36 @@ Criar uma ferramenta web para **buscar e consultar a legislação de prevenção
 5. **Commits:** ao final de cada etapa testada, fazer um commit e atualizar a "Situação atual".
 6. **Idioma:** responder **sempre em português**, inclusive nas mensagens de progresso.
 
+## Protótipo (prioridade atual)
+
+**Decisão de 18/11/2026:** antes de completar a Fase 1, fazer um **protótipo local** para testar se a ferramenta é útil no dia a dia. **A revisão do catálogo (Etapa 3) e as etapas completas da Fase 1 ficam para depois do protótipo.** São elas: datas de vigência (Etapa 5), diagnóstico completo (7), hierarquia completa (8), tabelas (9), referências cruzadas (10) e relatório geral (11).
+
+**Como é o protótipo:** roda só no computador do dono, **sem Supabase e sem login**. A busca usa um arquivo local SQLite com FTS5 (`dados/busca.sqlite`), que ignora acentos e aceita o começo da palavra.
+
+**Passos (um por vez, parando para testar ao final de cada um):**
+0. Registrar a decisão no `CLAUDE.md` e no `.gitignore`.
+1. `scripts/baixar_pdfs.py`: baixa os PDFs para `dados/pdfs/<tipo>/<id>.pdf` e as leis e decretos para `dados/paginas/<id>.html`, e preenche no catálogo `arquivo_local`, `hash_sha256`, `tamanho_bytes` e `data_download`.
+2. Ambiente virtual `.venv`, com pdfplumber e streamlit, registrados em `requirements.txt`. Os programas são rodados com `.\.venv\Scripts\python.exe`.
+3. `scripts/extrair_texto.py`: gera `dados/texto/<id>.jsonl` com `versao_id`, `item`, `pagina` e `texto`.
+   - Itens com numeração decimal (`5.1.3`) ou por artigo (`Art. 12`).
+   - Um trecho por item e por página.
+   - Marca `paginas` e `precisa_ocr` no catálogo.
+4. `scripts/indexar.py`: monta `dados/busca.sqlite` (FTS5) a partir dos textos e do catálogo.
+5. `app.py` (Streamlit), com:
+   - aviso de **"catálogo ainda não revisado"** e de ferramenta não oficial;
+   - data da última verificação;
+   - busca, com filtro por tipo e caixa "incluir revogadas e futuras" (desmarcada por padrão);
+   - resultados com norma, versão, situação, item, página e link para o PDF oficial em `#page=N`.
+
+**Limitações conhecidas do protótipo:**
+- O texto das tabelas sai misturado.
+- PDFs escaneados não entram na busca (sem OCR).
+- Cabeçalhos e rodapés podem aparecer nos trechos.
+- A divisão em itens pode errar.
+- A busca não entende variações além do começo da palavra e ainda não usa o `sinonimos.csv`.
+- Leis e decretos ficam sem número de página.
+- As datas de vigência estão incompletas: normas sem data aparecem como vigentes.
+
 ## Normas e versões
 
 - **O que entra (baixar e indexar):** versões vigentes, futuras (ainda não vigentes) e revogadas/anteriores, de leis, decretos, portarias (ex.: Portaria 476/2025), CSCIP, NPA, NPT e orientações técnicas.
@@ -186,7 +216,9 @@ scripts/           ← programas da Fase 1
     - o plano B (`--copia-local`) dá o mesmo resultado;
     - `conferir_catalogo.py` termina com 0 erros.
   - **Para a revisão:** a NPT 028 de 2014 (vigente até 24/04/2027) é substituída pela NPT 028 nova, que foi dividida em 3 partes. O programa não liga as duas sozinho. Preencher à mão `substituida_por = npt-028-p1_2027-04|npt-028-p2_2027-04|npt-028-p3_2027-04`.
-- **Fase 1: Etapas 0, 1 e 2 concluídas.** Próximo passo: **Etapa 3** (o dono revisa o catálogo no Excel).
+- **Fase 1: Etapas 0, 1 e 2 concluídas.** A Etapa 3 (revisão do catálogo) ficou **adiada**. Nenhuma linha está marcada como `revisado = sim`.
+- **Ajustes no catálogo:** `npt-028_2014-10` tem `substituida_por` = as 3 partes da NPT 028 nova. `npt-001-p3` tem na observação o link do PDF antigo.
+- **Prioridade atual: protótipo** (ver seção "Protótipo"). Passo 0 concluído. Próximo: **Passo 1** (`baixar_pdfs.py`).
 
 ## Como rodar os programas (PowerShell, dentro da pasta do projeto)
 

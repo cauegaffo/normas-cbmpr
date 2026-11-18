@@ -18,6 +18,10 @@ dados/fontes/
 # Páginas de leis, decretos e resoluções baixadas do legislacao.pr.gov.br
 dados/paginas/
 
+# Gerados pelos programas (podem ser recriados a qualquer momento)
+dados/texto/
+dados/busca.sqlite
+
 # ==============================
 # Ambientes virtuais do Python
 # ==============================
