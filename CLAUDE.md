@@ -310,8 +310,48 @@ scripts/           ← programas da Fase 1
   - **Opção A (decisão do dono, 18/11/2026):** a soma por norma **só ordena o resumo** "Normas encontradas". O fator "× (1 + soma da norma ÷ maior soma)" nos trechos foi **retirado**.
     - **Resultado:** os casos novos voltaram ao nível do "antes" (média do 1º trecho de 2,5; antes 2,3; com o fator, 3,6). "guarda-corpo" (NPT 011) voltou ao 6º lugar, e "chuveiros automáticos" (NPT 024) ao 7º.
     - **Custo:** em "hidrante", a NPT 022 está em **1º no resumo**, mas o 1º trecho dela voltou ao **7º lugar** na lista de trechos. Os 6 primeiros são da NPT 034. Para chegar à NPT 022, use o botão dela no resumo.
+- **Item 3 (chat com IA), primeira parte concluída em 18/11/2026:**
+  - **Conferido na documentação oficial** (os endereços `ai.google.dev` redirecionam para `aistudio.google.com/docs`):
+    - modelos com plano gratuito: `gemini-4-hydrogen`, `gemini-3.8-flash`, `gemini-3.6-flash` e `gemini-3.5-flash-lite`;
+    - biblioteca `google-genai` (a `google-generativeai` foi descontinuada em 30/11/2025), com a **Interactions API** (`client.interactions.create`, resposta em `output_text`);
+    - os modelos 3.6 em diante ignoram a temperatura;
+    - no plano gratuito, o Google usa o conteúdo para melhorar os produtos, e pessoas podem lê-lo.
+  - **Arquivos:**
+    - `scripts/ia.py`: a parte plugável, com a tabela `PROVEDORES`, os erros comuns e o `status()`, que nunca mostra a chave;
+    - `scripts/ia_gemini.py`: o provedor Gemini;
+    - `scripts/perguntar.py`: o fluxo da pergunta;
+    - `scripts/avaliar_ia.py` e `dados/gabarito_perguntas.csv`, com 9 perguntas;
+    - `.env.example`, sem chave.
+  - **Configuração no `.env`:** `IA_PROVEDOR`, `IA_MODELO` (padrão provisório `gemini-3.5-flash-lite`) e `GEMINI_API_KEY`. O `.env` fica fora do Git. Claude não lê nem mostra o `.env`.
+  - **Fluxo:**
+    1. a pergunta vira termos, localmente: saem as palavras de pergunta, e normas citadas ("NPT 003") viram filtro;
+    2. a busca é feita com sinônimos e no modo OU (novo `modo="qualquer"` no `busca.py`, além do filtro `normas`);
+    3. os **20 trechos** (`TRECHOS_PARA_IA`, até 1.500 caracteres cada; cerca de 5 mil a 16 mil caracteres por pergunta) vão rotulados [T1]… com norma, versão, situação, item e página;
+    4. as instruções dizem para usar só os trechos, citar a fonte, responder "Não encontrei a resposta nos trechos das normas consultados." quando não houver resposta, e avisar quando a norma for revogada ou ainda não vigente.
+    
+    A tela também mostra sozinha os avisos de revogada e futura.
+  - **Na prática** (google-genai 3.6.1):
+    - as exceções da Interactions API ficam em `google.genai._interactions_errors` (`APIStatusError.status_code`/`body`);
+    - uma chave inválida volta como **400 `API_KEY_INVALID`**, e não 401;
+    - as repetições automáticas foram desligadas (`HttpRetryOptions(attempts=1)`), para a mensagem de limite aparecer na hora.
+  - **Tela:** abas "Buscar" e "Perguntar". A aba "Perguntar" tem:
+    - o aviso do Google;
+    - a situação da IA;
+    - "Perguntar à IA", desativado sem chave;
+    - "Copiar pergunta pronta" (`st.code` com o ícone de copiar), que funciona sem chave;
+    - a resposta e os trechos usados, com links;
+    - mensagens claras para chave ausente ou inválida, limite por minuto ou diário e modelo não encontrado.
+  - **Testes (feitos sem a chave do dono):**
+    - 40 testes de unidade e o `AppTest` das duas abas;
+    - uma chamada real com chave **falsa**, que mostrou a mensagem de chave recusada sem a chave no texto;
+    - `avaliar_ia.py --sem-ia`: todas as normas esperadas estão entre os 20 trechos (a NPT 011 do guarda-corpo só no 8º).
+  - **Falta:**
+    - o dono criar o `.env`;
+    - Claude rodar o `avaliar_ia.py` com `gemini-3.5-flash-lite` e com `gemini-3.8-flash` e comparar, para o dono escolher o modelo padrão;
+    - o dono validar os casos 4 a 9 do `gabarito_perguntas.csv`.
 - **Próximo:**
   - o dono valida as normas esperadas dos 12 casos novos do gabarito, que foram escolhidas por Claude;
+  - o dono cria o `.env` (Item 3);
   - o dono testa o protótipo no dia a dia.
 
 ## Como rodar os programas (PowerShell, dentro da pasta do projeto)
@@ -330,6 +370,11 @@ python scripts\busca.py "saída de emergência"   # busca no terminal (--limite 
 python scripts\avaliar_busca.py                 # mede a busca com o dados\gabarito.csv
 python scripts\avaliar_busca.py --salvar antes.json        # guarda o resultado...
 python scripts\avaliar_busca.py --comparar antes.json      # ...e compara depois de uma mudança
+.\.venv\Scripts\python.exe scripts\perguntar.py "pergunta" --pronta   # só a pergunta pronta (sem IA)
+.\.venv\Scripts\python.exe scripts\perguntar.py "pergunta"            # pergunta à IA (precisa do .env)
+.\.venv\Scripts\python.exe scripts\avaliar_ia.py --sem-ia             # trechos do gabarito de perguntas (sem cota)
+.\.venv\Scripts\python.exe scripts\avaliar_ia.py --modelo gemini-3.8-flash --salvar b.json   # com IA (gasta cota)
+.\.venv\Scripts\python.exe scripts\avaliar_ia.py --comparar a.json b.json                    # compara dois modelos
 .\.venv\Scripts\python.exe -m streamlit run app.py   # abre a tela de busca no navegador (Ctrl+C para fechar)
 ```
 

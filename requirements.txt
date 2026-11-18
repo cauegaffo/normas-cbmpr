@@ -3,3 +3,5 @@
 
 pdfplumber==0.11.10   # lê o texto dos PDFs
 streamlit==1.67.0     # monta a tela do aplicativo no navegador
+google-genai==3.6.1   # IA: Google Gemini (biblioteca oficial)
+python-dotenv==1.2.4  # lê a configuração e a chave do arquivo .env

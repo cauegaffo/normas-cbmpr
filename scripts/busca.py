@@ -178,8 +178,11 @@ def reconhecer_sinonimos(palavras, grupos):
 # Interpretação do que foi digitado
 # ---------------------------------------------------------------------------
 
-def interpretar(texto, usar_sinonimos=True, grupos=None):
+def interpretar(texto, usar_sinonimos=True, grupos=None, modo="todas"):
     """Transforma o que o usuário digitou em consultas do FTS5.
+
+    modo="todas":    o trecho precisa ter TODAS as palavras (busca normal);
+    modo="qualquer": basta ter QUALQUER uma (usado nas perguntas à IA, que têm muitas palavras).
 
     Devolve None (nada para buscar) ou um dicionário com:
       consulta             só o texto digitado (busca "B");
@@ -230,8 +233,9 @@ def interpretar(texto, usar_sinonimos=True, grupos=None):
 
     if not termos_b:
         return None
-    consulta = " AND ".join(termos_b)
-    consulta_sinonimos = " AND ".join(termos_a) if usados else None
+    juncao = " OR " if modo == "qualquer" else " AND "
+    consulta = juncao.join(termos_b)
+    consulta_sinonimos = juncao.join(termos_a) if usados else None
     return {"consulta": consulta, "consulta_sinonimos": consulta_sinonimos,
             "sinonimos_usados": usados, "palavras": [sem_acentos(p) for p in importantes]}
 
@@ -313,12 +317,19 @@ def ler_info(conexao):
     return {chave: valor for chave, valor in conexao.execute("SELECT chave, valor FROM info")}
 
 
-def _filtros(tipos, incluir_todas, parametros):
+def _filtros(tipos, incluir_todas, parametros, normas=None):
     filtros = ["trechos MATCH :consulta"]
     for i, tipo in enumerate(tipos or []):
         parametros[f"tipo{i}"] = tipo
     if tipos:
         filtros.append(f"n.tipo IN ({', '.join(f':tipo{i}' for i in range(len(tipos)))})")
+    if normas:
+        # normas = [("npt", "003"), ("cscip", "")]: só trechos dessas normas (todas as versões e partes)
+        condicoes = []
+        for i, (tipo, numero) in enumerate(normas):
+            parametros[f"ntipo{i}"], parametros[f"nnum{i}"] = tipo, numero
+            condicoes.append(f"(n.tipo = :ntipo{i} AND (:nnum{i} = '' OR n.numero = :nnum{i}))")
+        filtros.append("(" + " OR ".join(condicoes) + ")")
     if not incluir_todas:
         filtros.append(f"({SITUACAO_SQL}) = 'vigente'")
     return " AND ".join(filtros)
@@ -326,7 +337,7 @@ def _filtros(tipos, incluir_todas, parametros):
 
 def buscar(conexao, texto, tipos=None, incluir_todas=False, limite=50,
            marca_inicio="[", marca_fim="]", data_referencia=None,
-           usar_sinonimos=True, versao_id=None):
+           usar_sinonimos=True, versao_id=None, modo="todas", normas=None):
     """Busca e devolve um dicionário:
       trechos          lista de trechos (dicionários), do mais relevante para o menos, até o limite;
       normas           resumo "Normas encontradas" (id, norma, versao, situacao, quantidade, pontos);
@@ -337,15 +348,17 @@ def buscar(conexao, texto, tipos=None, incluir_todas=False, limite=50,
     tipos:          lista de tipos (ex.: ["npt", "npa"]); vazio = todos.
     incluir_todas:  False = só normas vigentes; True = inclui revogadas e futuras.
     versao_id:      mostra só os trechos dessa versão (o resumo continua com todas as normas).
+    modo:           "todas" (todas as palavras) ou "qualquer" (qualquer palavra; usado nas perguntas).
+    normas:         [(tipo, número)], ex.: [("npt", "003")]: só trechos dessas normas.
     """
     vazio = {"trechos": [], "normas": [], "sinonimos_usados": {}, "total_trechos": 0, "limitado": False}
-    interpretado = interpretar(texto, usar_sinonimos)
+    interpretado = interpretar(texto, usar_sinonimos, modo=modo)
     if not interpretado:
         return vazio
 
     parametros = {"hoje": data_referencia or date.today().isoformat(),
                   "limite": CANDIDATOS, "ini": marca_inicio, "fim": marca_fim}
-    where = _filtros(tipos, incluir_todas, parametros)
+    where = _filtros(tipos, incluir_todas, parametros, normas)
 
     # Busca A: candidatos e trecho destacado (com sinônimos, se houver).
     consulta_a = interpretado["consulta_sinonimos"] or interpretado["consulta"]
