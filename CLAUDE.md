@@ -245,11 +245,30 @@ scripts/           ← programas da Fase 1
     - CSCIP, leis, decretos, resoluções e portarias: por artigo;
     - a portaria de aprovação que vem no começo de alguns arquivos vira `Portaria, Art. Xº`;
     - o texto antes do primeiro item fica em `início`.
-  - **Testado primeiro** com a NPT 003 (2026), a NPT 022 e a NPA 002, e depois rodado em todos os documentos.
+  - **Teste:** o programa foi testado primeiro com a NPT 003 (2026), a NPT 022 e a NPA 002, e depois rodado em todos os documentos. **O dono ainda não conferiu os trechos com os PDFs.**
   - **Avisos:**
     - **as 19 OTs ficam inteiras em `início`**, porque não têm itens numerados;
     - **páginas quase sem texto** (provavelmente figuras ou formulários): NPA 002 (40, 53–57), NPT 002 (12), NPT 020 (30–38) e NPT 028/2014 (34–35).
-- **Próximo: Passo 4** (`scripts/indexar.py`, que monta o `dados/busca.sqlite`).
+- **Protótipo, Passo 4 concluído (18/11/2026):**
+  - **`scripts/indexar.py`** monta o `dados/busca.sqlite` do zero, com 3 tabelas:
+    - `normas`, com os dados do catálogo e o `link_oficial`, que é o PDF ou a versão "Compilado" das leis;
+    - `trechos`, com o índice de busca FTS5 (`unicode61 remove_diacritics 2`);
+    - `info`, com a data da indexação e a da última verificação.
+  - **Resultado:** 9.372 trechos indexados.
+  - **`scripts/busca.py`** tem a função `buscar()`, usada pelo terminal e pelo app. Como ela funciona:
+    - ignora acentos e aceita o começo da palavra;
+    - exige todas as palavras, sem contar palavras como "de" e "para";
+    - calcula a situação na hora, pelas datas;
+    - por padrão, só mostra normas vigentes.
+  - **Reordenação** (função `reordenar`): o BM25 favorecia títulos soltos e linhas de checklist. A pontuação agora muda assim:
+    - × 2 se o título da norma tiver todas as palavras buscadas;
+    - × 0,5 para trecho com menos de 100 caracteres;
+    - × 0,5 para trecho com pontilhado.
+  - **Testes:**
+    - "iluminação de emergência" traz a NPT 018 e a OT 001/2025;
+    - "saída de emergência" traz a NPT 011;
+    - "hidrante" traz a NPT 034 (Hidrante Urbano) e, logo depois, a NPT 022.
+- **Próximo: Passo 5** (`app.py` no Streamlit).
 
 ## Como rodar os programas (PowerShell, dentro da pasta do projeto)
 
@@ -262,4 +281,6 @@ python scripts\baixar_pdfs.py                   # baixa o que falta (PDFs e pág
 python scripts\baixar_pdfs.py --reverificar     # baixa de novo e avisa se algum arquivo mudou no site
 .\.venv\Scripts\python.exe scripts\extrair_texto.py   # gera dados\texto\<id>.jsonl (texto por item e página)
 .\.venv\Scripts\python.exe scripts\extrair_texto.py --somente npt-022_2015-03   # só os ids indicados
+python scripts\indexar.py                       # monta dados\busca.sqlite (rodar depois de extrair)
+python scripts\busca.py "saída de emergência"   # busca no terminal (--limite 10, --tipo npt, --todas)
 ```

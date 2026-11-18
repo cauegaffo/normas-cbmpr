@@ -21,6 +21,7 @@ dados/paginas/
 # Gerados pelos programas (podem ser recriados a qualquer momento)
 dados/texto/
 dados/busca.sqlite
+dados/busca.tmp
 
 # ==============================
 # Ambientes virtuais do Python
