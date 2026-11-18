@@ -1,0 +1,42 @@
+# ==============================
+# SEGREDOS — nunca enviar ao GitHub
+# ==============================
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+
+# ==============================
+# PDFs baixados do site do CBMPR
+# (podem ser baixados de novo a qualquer momento)
+# ==============================
+dados/pdfs/
+
+# ==============================
+# Ambientes virtuais do Python
+# ==============================
+.venv/
+venv/
+env/
+ENV/
+
+# ==============================
+# Arquivos temporários do Python
+# ==============================
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# ==============================
+# Editor (VS Code) e sistema (Windows)
+# ==============================
+.vscode/
+Thumbs.db
+desktop.ini
