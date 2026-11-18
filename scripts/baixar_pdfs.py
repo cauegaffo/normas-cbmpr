@@ -13,7 +13,7 @@ O que ele faz:
    interromper (Ctrl+C) e rodar de novo, que ele continua de onde parou.
 3. PDFs vão para dados/pdfs/<tipo>/<id>.pdf.
    Leis, decretos e resoluções (páginas do legislacao.pr.gov.br) vão para
-   dados/paginas/<id>.html.
+   dados/paginas/<id>.html, sempre na versão "Compilado" (texto atual).
 4. Confere se o PDF é mesmo um PDF (o arquivo começa com "%PDF"). Se o site
    devolver uma página de erro, nada é salvo.
 5. Preenche no catálogo: arquivo_local, hash_sha256, tamanho_bytes e data_download.
@@ -40,6 +40,20 @@ def caminho_destino(linha):
     if linha["tipo"] in TIPOS_PAGINA:
         return f"dados/paginas/{linha['id']}.html"
     return f"dados/pdfs/{linha['tipo']}/{linha['id']}.pdf"
+
+
+def endereco_download(linha):
+    """Endereço de onde o arquivo é baixado.
+
+    Para leis, decretos e resoluções, o link do site do CBMPR abre a versão "Alterado"
+    do legislacao.pr.gov.br (texto antigo e novo misturados). Usamos sempre a versão
+    "Compilado" (só o texto atual), montada a partir do código do ato (codAto)."""
+    if linha["tipo"] in TIPOS_PAGINA:
+        codigo = re.search(r"codAto=(\d+)", linha["link_origem"])
+        if codigo:
+            return ("https://www.legislacao.pr.gov.br/legislacao/listarAtosAno.do?action=exibir"
+                    f"&codAto={codigo.group(1)}&codTipoAto=&tipoVisualizacao=compilado")
+    return linha["link_origem"]
 
 
 def baixar(endereco):
@@ -79,7 +93,7 @@ def processar(linha, reverificar):
 
     print(f"  {linha['id']} ... ", end="", flush=True)
     try:
-        conteudo = baixar(linha["link_origem"])
+        conteudo = baixar(endereco_download(linha))
     except Exception as erro:
         print(f"ERRO ao baixar: {erro}")
         return "erro"

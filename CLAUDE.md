@@ -84,6 +84,8 @@ Criar uma ferramenta web para **buscar e consultar a legislação de prevenção
 - **O que entra (baixar e indexar):** versões vigentes, futuras (ainda não vigentes) e revogadas/anteriores, de leis, decretos, portarias (ex.: Portaria 476/2025), CSCIP, NPA, NPT e orientações técnicas.
 - **Consultas públicas:** ficam **de fora** (nem no catálogo).
 - **Leis, decretos e resoluções** (ex.: Lei 19.449, Lei 13.976, Decreto 11.868, Resolução SESP 399/2020): não são PDF. O texto é capturado das páginas do site **legislacao.pr.gov.br** e a referência é **por artigo**, porque não há número de página.
+  - **Sempre a versão "Compilado"** (só o texto atual, com as alterações). Decisão de 18/11/2026.
+  - O link do site do CBMPR abre a versão "Alterado", que mistura o texto antigo e o novo. Por isso o `link_origem` continua sendo o do CBMPR, e o `baixar_pdfs.py` monta o endereço do "Compilado" a partir do `codAto`, com `tipoVisualizacao=compilado`.
 - **Revogadas sem link** (ex.: NPT 001 Parte 2, NPT 004): entram no catálogo com situação **`pendente`** e sem link. Os arquivos serão procurados depois.
 - **Cada versão** tem data de **início** e de **fim de vigência** e, quando houver, a indicação de **qual versão a substituiu**. Motivo: edificações antigas, existentes e novas podem seguir legislações diferentes, então é preciso filtrar "normas vigentes em uma data".
 - **A situação é calculada pelas datas**, e não digitada (vigente / futura / revogada). A exceção é `pendente`: norma conhecida, mas ainda sem arquivo. Uma norma futura passa a vigente sozinha quando chega a data.
@@ -202,9 +204,12 @@ scripts/           ← programas da Fase 1
   - **nenhuma consulta pública** aparece nesta página.
 - **A confirmar:**
   - **NPT 001 Partes 1 e 3:** não aparecem na página. Não se sabe se foram revogadas ou se só ficaram de fora. Por ora, `pendente`.
-  - **CSCIP "Agosto de 2021":** o arquivo se chama "versao_final_agosto_de_2023", foi criado em 20/03/2023 e tem 51 páginas. Pode ser o texto de 2021 consolidado em 2023. Conferir o conteúdo na Etapa 6.
-  - **NPT 041:** o link aponta para "anexo_2_errata…", um arquivo criado em 28/10/2022 com 11 páginas. Parece ser a norma inteira com a errata, e não só a errata. Conferir na Etapa 6.
-  - O texto desses PDFs está codificado: sem uma biblioteca de PDF (pdfplumber, Etapa 6), não dá para lê-lo.
+- **Resolvido em 18/11/2026** (lendo os PDFs com o pdfplumber):
+  - **CSCIP "Agosto de 2021":** é o texto de 2021. Ele termina com "Curitiba, PR, 25 de junho de 2021" e ainda fala em "Corpo de Bombeiros da Polícia Militar". O arquivo só foi gerado de novo em 2023.
+  - **NPT 041:** é a norma inteira (Versão 04, outubro de 2022, 11 páginas, 15 capítulos), e não só a errata. A vigência começa "6 meses a contar da publicação em DOE", e não em outubro de 2022. Levar isso em conta ao preencher as datas.
+- **Curiosidades dos PDFs oficiais**, que não são erros da extração:
+  - a NPT 003 (2026) pula do item 4.379 direto para o 4.480, na página 26;
+  - a NPT 022 tem dois itens 5.10.2.3, com textos diferentes, na página 13.
 - **Legislações anteriores:** a página tem o link "Clique aqui e tenha acesso as Legislações Anteriores", que leva a uma pasta do Google Drive: http://drive.google.com/drive/folders/1Z0fbQ0Skmlz4bqyO6hp7AqzFfTLQ6qvy. É o lugar para procurar as versões `pendente` e as revogadas antigas.
 - **Etapa 2 concluída (18/11/2026):**
   - `scripts/catalogo.py` traz as funções comuns; `scripts/listar_normas.py` e `scripts/conferir_catalogo.py` foram criados;
@@ -229,7 +234,22 @@ scripts/           ← programas da Fase 1
     - recusa um "PDF" que não comece com `%PDF`;
     - em linhas `revisado = sim`, só preenche as colunas vazias.
   - **Detalhe:** as páginas do legislacao.pr.gov.br trazem um código de sessão (`;jsessionid=...`) que muda a cada visita. O programa o apaga antes de salvar e de calcular o hash, para não acusar uma mudança falsa.
-- **Próximo: Passo 2** (`.venv` com pdfplumber e streamlit, e `requirements.txt`).
+- **Leis:** o `baixar_pdfs.py` passou a baixar a versão "Compilado". As 4 páginas foram baixadas de novo.
+- **Protótipo, Passo 2 concluído (18/11/2026):**
+  - `.venv` criado pelo dono, com pdfplumber 0.11.10 e streamlit 1.67.0. As versões estão fixadas no `requirements.txt`;
+  - todas as bibliotecas já têm versão pronta para o Python 3.15.
+- **Protótipo, Passo 3 concluído (18/11/2026):** `scripts/extrair_texto.py` criado.
+  - **Resultado:** 91 documentos, **9.372 trechos** e 1.558 páginas, sem erros. **Nenhum documento precisa de OCR.**
+  - **Como divide em itens:**
+    - NPTs, NPAs e OTs: numeração decimal e anexos (`Anexo A`, `A.1`, `F1.2`);
+    - CSCIP, leis, decretos, resoluções e portarias: por artigo;
+    - a portaria de aprovação que vem no começo de alguns arquivos vira `Portaria, Art. Xº`;
+    - o texto antes do primeiro item fica em `início`.
+  - **Testado primeiro** com a NPT 003 (2026), a NPT 022 e a NPA 002, e depois rodado em todos os documentos.
+  - **Avisos:**
+    - **as 19 OTs ficam inteiras em `início`**, porque não têm itens numerados;
+    - **páginas quase sem texto** (provavelmente figuras ou formulários): NPA 002 (40, 53–57), NPT 002 (12), NPT 020 (30–38) e NPT 028/2014 (34–35).
+- **Próximo: Passo 4** (`scripts/indexar.py`, que monta o `dados/busca.sqlite`).
 
 ## Como rodar os programas (PowerShell, dentro da pasta do projeto)
 
@@ -240,4 +260,6 @@ python scripts\listar_normas.py --copia-local   # plano B: usa dados\fontes\legi
 python scripts\conferir_catalogo.py             # lista erros e avisos do catálogo (não altera nada)
 python scripts\baixar_pdfs.py                   # baixa o que falta (PDFs e páginas das leis)
 python scripts\baixar_pdfs.py --reverificar     # baixa de novo e avisa se algum arquivo mudou no site
+.\.venv\Scripts\python.exe scripts\extrair_texto.py   # gera dados\texto\<id>.jsonl (texto por item e página)
+.\.venv\Scripts\python.exe scripts\extrair_texto.py --somente npt-022_2015-03   # só os ids indicados
 ```

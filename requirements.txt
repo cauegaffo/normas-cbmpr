@@ -1,0 +1,5 @@
+# Bibliotecas do projeto Normas CBMPR (instalar dentro do .venv):
+#   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
+pdfplumber==0.11.10   # lê o texto dos PDFs
+streamlit==1.67.0     # monta a tela do aplicativo no navegador
