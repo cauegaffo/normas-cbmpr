@@ -301,3 +301,14 @@ python scripts\indexar.py                       # monta dados\busca.sqlite (roda
 python scripts\busca.py "saída de emergência"   # busca no terminal (--limite 10, --tipo npt, --todas)
 .\.venv\Scripts\python.exe -m streamlit run app.py   # abre a tela de busca no navegador (Ctrl+C para fechar)
 ```
+
+**Atalho de dois cliques:**
+- `abrir_ferramenta.bat` entra na pasta do próprio `.bat` (`%~dp0`) e roda o Streamlit com o Python do `.venv`. Fechar a janela preta desliga a ferramenta.
+- O `.gitattributes` mantém o `.bat` com fim de linha CRLF.
+- O atalho "Normas CBMPR" fica na Área de Trabalho, que está dentro do OneDrive (`[Environment]::GetFolderPath('Desktop')`), e **não vai para o GitHub**. Para recriá-lo:
+
+```powershell
+$s = New-Object -ComObject WScript.Shell
+$l = $s.CreateShortcut((Join-Path ([Environment]::GetFolderPath('Desktop')) "Normas CBMPR.lnk"))
+$l.TargetPath = "$PWD\abrir_ferramenta.bat"; $l.WorkingDirectory = "$PWD"; $l.Save()
+```

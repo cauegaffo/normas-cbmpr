@@ -1,0 +1,2 @@
+# Arquivos .bat precisam do fim de linha do Windows (CRLF) para funcionar sempre.
+*.bat text eol=crlf
