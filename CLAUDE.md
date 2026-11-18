@@ -63,8 +63,15 @@ Criar uma ferramenta web para **buscar e consultar a legislação de prevenção
 
 - **Uma linha por versão** de norma (um PDF).
 - Usa `;` como separador e UTF-8 com BOM, para abrir certo no Excel em português.
-- Colunas: `id`, `norma_id`, `tipo`, `numero`, `parte`, `titulo`, `versao`, `vigencia_inicio`, `vigencia_fim`, `substituida_por`, `situacao`, `baixar`, `link_origem`, `arquivo_local`, `hash_sha256`, `tamanho_bytes`, `paginas`, `precisa_ocr`, `data_download`, `ultima_verificacao`, `revisado`, `observacao`.
-- Formatos: `id` como `npt-022_2026-11` e `norma_id` como `npt-022`. Datas em `AAAA-MM-DD`. `vigencia_fim` vazio quer dizer "ainda em vigor".
+- Colunas: `id`, `norma_id`, `tipo`, `numero`, `parte`, `titulo`, `versao`, `vigencia_inicio`, `vigencia_fim`, `substituida_por`, `situacao`, `baixar`, `link_origem`, `arquivo_local`, `hash_sha256`, `tamanho_bytes`, `paginas`, `precisa_ocr`, `data_download`, `ultima_verificacao`, `no_site`, `revisado`, `observacao`. A lista oficial fica em `scripts/catalogo.py`.
+- Tipos: `lei`, `decreto`, `resolucao`, `portaria`, `cscip`, `npa`, `npt`, `ot`.
+- Formatos:
+  - `id` como `npt-022_2015-03` (norma + versão AAAA-MM). Normas em partes usam `npt-015-p1_2012-01`.
+  - `norma_id` como `npt-022`. Quando o número já inclui o ano, o `id` não repete o ano (ex.: `portaria-476-2025`, `ot-001-2013`).
+  - `parte` guarda só o número da parte.
+  - `substituida_por` aceita vários ids separados por `|`.
+  - Datas em `AAAA-MM-DD`. `vigencia_fim` vazio quer dizer "ainda em vigor".
+- `no_site = não` quer dizer que o link sumiu da página na última verificação.
 - `revisado = sim` quer dizer que o dono conferiu a linha. Os programas **nunca sobrescrevem** linhas revisadas.
 - A data geral da última verificação do site fica em `dados/estado.json`.
 
@@ -168,4 +175,24 @@ scripts/           ← programas da Fase 1
   - **CSCIP "Agosto de 2021":** o arquivo se chama "versao_final_agosto_de_2023", foi criado em 20/03/2023 e tem 51 páginas. Pode ser o texto de 2021 consolidado em 2023. Conferir o conteúdo na Etapa 6.
   - **NPT 041:** o link aponta para "anexo_2_errata…", um arquivo criado em 28/10/2022 com 11 páginas. Parece ser a norma inteira com a errata, e não só a errata. Conferir na Etapa 6.
   - O texto desses PDFs está codificado: sem uma biblioteca de PDF (pdfplumber, Etapa 6), não dá para lê-lo.
-- **Fase 1: Etapas 0 e 1 concluídas.** Próximo passo: **Etapa 2** (`listar_normas.py` e `conferir_catalogo.py`).
+- **Legislações anteriores:** a página tem o link "Clique aqui e tenha acesso as Legislações Anteriores", que leva a uma pasta do Google Drive: http://drive.google.com/drive/folders/1Z0fbQ0Skmlz4bqyO6hp7AqzFfTLQ6qvy. É o lugar para procurar as versões `pendente` e as revogadas antigas.
+- **Etapa 2 concluída (18/11/2026):**
+  - `scripts/catalogo.py` traz as funções comuns; `scripts/listar_normas.py` e `scripts/conferir_catalogo.py` foram criados;
+  - catálogo gerado com **95 linhas**: 83 vigentes, 5 revogadas, 3 futuras e 4 pendentes;
+  - por tipo: lei 2, decreto 1, resolução 1, portaria 2, CSCIP 2, NPA 5, NPT 63 (59 + 4 pendentes), OT 19.
+  - **Testes que passaram:**
+    - rodar duas vezes não duplica nada;
+    - uma linha com `revisado = sim` é preservada;
+    - o plano B (`--copia-local`) dá o mesmo resultado;
+    - `conferir_catalogo.py` termina com 0 erros.
+  - **Para a revisão:** a NPT 028 de 2014 (vigente até 24/04/2027) é substituída pela NPT 028 nova, que foi dividida em 3 partes. O programa não liga as duas sozinho. Preencher à mão `substituida_por = npt-028-p1_2027-04|npt-028-p2_2027-04|npt-028-p3_2027-04`.
+- **Fase 1: Etapas 0, 1 e 2 concluídas.** Próximo passo: **Etapa 3** (o dono revisa o catálogo no Excel).
+
+## Como rodar os programas (PowerShell, dentro da pasta do projeto)
+
+```powershell
+cd "$HOME\OneDrive\Documentos\Normas_CBMPR"
+python scripts\listar_normas.py                 # baixa a página e atualiza dados\catalogo.csv
+python scripts\listar_normas.py --copia-local   # plano B: usa dados\fontes\legislacao.html
+python scripts\conferir_catalogo.py             # lista erros e avisos do catálogo (não altera nada)
+```
