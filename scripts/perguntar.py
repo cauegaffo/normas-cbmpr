@@ -158,13 +158,18 @@ def preparar(conexao, pergunta, incluir_todas=False, marca_inicio="[", marca_fim
     }
 
 
-def responder(preparado, modelo=None):
-    """Passo 4: envia à IA configurada (ver ia.py). Pode levantar os erros de ia.py."""
+def responder(preparado, modelo=None, usar_reserva=True):
+    """Passo 4: envia à IA configurada (ver ia.py). Pode levantar os erros de ia.py.
+    Devolve {"texto", "modelo" (o que respondeu), "usou_reserva", "motivo"}.
+    Se o modelo principal estiver sobrecarregado ou no limite por minuto, tenta uma vez o
+    modelo reserva (IA_MODELO_RESERVA), a não ser que usar_reserva=False."""
     import ia  # só carrega a IA quando for mesmo perguntar (a pergunta pronta não precisa)
-    provedor = ia.obter_provedor(modelo)
     if not preparado["trechos"]:
-        return "Não encontrei a resposta nos trechos das normas consultados. (Nenhum trecho foi encontrado.)"
-    return provedor.responder(preparado["instrucoes"], preparado["mensagem"])
+        provedor = ia.obter_provedor(modelo)   # confere a configuração (ex.: falta de chave)
+        return {"texto": "Não encontrei a resposta nos trechos das normas consultados. "
+                         "(Nenhum trecho foi encontrado.)",
+                "modelo": provedor.modelo, "usou_reserva": False, "motivo": ""}
+    return ia.responder_com_reserva(preparado["instrucoes"], preparado["mensagem"], modelo, usar_reserva)
 
 
 def main():
@@ -182,9 +187,12 @@ def main():
         return
     import ia
     try:
-        print(responder(preparado, args.modelo))
+        resultado = responder(preparado, args.modelo)
     except ia.ErroIA as erro:
         sys.exit(f"ERRO: {erro}")
+    print(resultado["texto"])
+    reserva = f" (modelo reserva: {resultado['motivo']})" if resultado["usou_reserva"] else ""
+    print(f"\nRespondido por: {resultado['modelo']}{reserva}")
     for aviso in preparado["avisos"]:
         print(f"\nAVISO: {aviso}")
     print("\nTrechos usados:")

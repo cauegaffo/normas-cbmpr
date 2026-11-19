@@ -214,7 +214,8 @@ def mostrar_aba_perguntar(conexao):
     if estado.get("erro"):
         st.error(estado["erro"])
     elif estado["tem_chave"]:
-        st.caption(f"IA: {estado['nome']} · modelo **{estado['modelo']}** · chave configurada.")
+        reserva = f" · reserva **{estado['modelo_reserva']}**" if estado.get("modelo_reserva") else ""
+        st.caption(f"IA: {estado['nome']} · modelo **{estado['modelo']}**{reserva} · chave configurada.")
     else:
         st.info(COMO_CRIAR_ENV)
 
@@ -273,10 +274,16 @@ def mostrar_aba_perguntar(conexao):
     for aviso in preparado["avisos"]:
         st.warning(aviso)
 
-    if st.session_state.get(chave_resp):
+    resultado = st.session_state.get(chave_resp)
+    if resultado:
         st.subheader("Resposta")
         with st.container(border=True):
-            st.markdown(proteger_resposta(st.session_state[chave_resp]))
+            st.markdown(proteger_resposta(resultado["texto"]))
+        if resultado["usou_reserva"]:
+            st.info(f"Respondido pelo **modelo reserva {resultado['modelo']}**, porque "
+                    f"{resultado['motivo']}.")
+        else:
+            st.caption(f"Respondido por: **{resultado['modelo']}**")
 
     trechos = preparado["trechos"]
     if not trechos:

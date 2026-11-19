@@ -353,8 +353,21 @@ scripts/           ← programas da Fase 1
       - Na pergunta 6 (extintor), disse que a Tabela 1 da NPT 021 não estava nos trechos.
     - **`gemini-3.8-flash`:** **503 "high demand"** em todas as perguntas, duas vezes seguidas. **Comparação pendente.**
     - **Mensagens melhoradas:** 403 (pode ser passageiro) e 500/502/503/504 (modelo sobrecarregado).
+  - **Modelo padrão: `gemini-3.5-flash-lite`** (decisão do dono, 18/11/2026). A comparação com o `gemini-3.8-flash` ficou para outro dia.
+  - **Modelo reserva** (`IA_MODELO_RESERVA=gemini-3.6-flash`, opcional no `.env`):
+    - se o principal der sobrecarga (500 a 504, `ErroSobrecarga`) ou limite **por minuto**, `ia.responder_com_reserva()` tenta **uma vez** o reserva;
+    - limite diário, chave inválida, modelo inexistente e outros erros **não** usam o reserva;
+    - a tela mostra "Respondido por: …" ou "Respondido pelo modelo reserva …, porque …";
+    - o `avaliar_ia.py --modelo X` mede só o modelo X, sem reserva.
+  - **Testes:**
+    - provedor **falso** registrado em `PROVEDORES` (21 casos de reserva) e `AppTest`;
+    - uma chamada real pela tela: "Respondido por: gemini-3.5-flash-lite".
+  - **Disponibilidade em 18/11/2026, à noite:**
+    - `gemini-3.6-flash`: **503** (sobrecarregado);
+    - `gemini-4-hydrogen`: **respondeu** certo (15 m, NPT 018). É uma alternativa de reserva, se o 3.6-flash continuar fora.
   - **Falta:**
-    - repetir o `gemini-3.8-flash` mais tarde e o dono escolher o modelo padrão;
+    - o dono acrescentar `IA_MODELO_RESERVA=gemini-3.6-flash` no próprio `.env`;
+    - comparar com o `gemini-3.8-flash` outro dia;
     - o dono validar os casos 4 a 9 do `gabarito_perguntas.csv`.
 - **Próximo:**
   - o dono valida as normas esperadas dos 12 casos novos do gabarito, que foram escolhidas por Claude;

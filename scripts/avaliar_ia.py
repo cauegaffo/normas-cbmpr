@@ -130,7 +130,10 @@ def avaliar(sem_ia, modelo, pausa):
                 time.sleep(pausa)
             inicio = time.time()
             try:
-                resposta = perguntar.responder(preparado, modelo)
+                # Com --modelo, mede só aquele modelo (sem reserva). Sem --modelo, igual à tela.
+                resultado = perguntar.responder(preparado, modelo, usar_reserva=modelo is None)
+                resposta = resultado["texto"]
+                item["modelo_usado"] = resultado["modelo"]
             except ia.ErroLimite as erro:
                 print(f"\n   PAREI: {erro}")
                 print("   (Pode ser o limite de requisições ou de tokens por minuto. Não mudei nada.)")
@@ -146,7 +149,8 @@ def avaliar(sem_ia, modelo, pausa):
             item["resposta"] = resposta
             item["criterios"] = conferir(caso, resposta)
             marcas = ", ".join(f"{c}: {'ok' if v else 'NÃO'}" for c, v in item["criterios"].items())
-            print(f"   resposta em {item['segundos']} s · {marcas}")
+            reserva = " (RESERVA)" if resultado["usou_reserva"] else ""
+            print(f"   resposta de {resultado['modelo']}{reserva} em {item['segundos']} s · {marcas}")
             print("   " + resposta.replace("\n", "\n   ")[:1500])
         print()
         saida.append(item)

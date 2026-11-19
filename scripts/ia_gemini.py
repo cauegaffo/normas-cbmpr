@@ -27,7 +27,7 @@ ERROS_DE_STATUS = tuple(e for e in (errors.APIError, getattr(erros_interactions,
 ERROS_DE_CONEXAO = tuple(e for e in (getattr(erros_interactions, "APIConnectionError", None),) if e)
 
 from ia import (ErroChaveAusente, ErroChaveInvalida, ErroIA, ErroLimite, ErroModelo,
-                esconder_segredo)
+                ErroSobrecarga, esconder_segredo)
 
 NOME = "Google Gemini"
 VARIAVEL_CHAVE = "GEMINI_API_KEY"
@@ -114,7 +114,7 @@ def traduzir_erro(erro, chave, modelo):
             "(ex.: gemini-3.5-flash-lite).")
     if codigo in (500, 502, 503, 504):
         # Ex. real (18/11/2026): 503 "gemini-3.8-flash is currently experiencing high demand".
-        return ErroIA(
+        return ErroSobrecarga(
             f'O modelo "{modelo}" está sobrecarregado ou indisponível no Google neste momento '
             f"({codigo}). Isso costuma ser passageiro: tente de novo em alguns minutos, troque o "
             'IA_MODELO no .env ou use o botão "Copiar pergunta pronta".')
