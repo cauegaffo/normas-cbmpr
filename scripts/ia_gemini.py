@@ -90,9 +90,12 @@ def traduzir_erro(erro, chave, modelo):
             "A chave do Gemini foi recusada (inválida ou expirada). Confira a chave em "
             "https://aistudio.google.com/apikey e corrija o GEMINI_API_KEY no arquivo .env.")
     if codigo == 403:
+        # Em 18/11/2026 um 403 apareceu numa pergunta e sumiu ao repetir (falha passageira),
+        # com a mesma chave funcionando nas outras. Por isso a mensagem sugere tentar de novo.
         return ErroChaveInvalida(
-            "O Google negou o acesso com esta chave (403). A chave pode ter sido bloqueada ou o "
-            "projeto pode estar restrito. Confira em https://aistudio.google.com/apikey.")
+            "O Google negou o acesso (403). Se outras perguntas funcionaram, pode ser uma falha "
+            "passageira: tente de novo. Se continuar, a chave pode ter sido bloqueada ou o projeto "
+            "restrito: confira em https://aistudio.google.com/apikey.")
     if codigo == 429:
         # Limite do dia aparece como "quota_exceeded" (Interactions API) ou como uma cota
         # "...PerDay..." / "..._per_day" nos detalhes. O resto é limite por minuto.
@@ -109,4 +112,10 @@ def traduzir_erro(erro, chave, modelo):
         return ErroModelo(
             f'O modelo "{modelo}" não foi encontrado. Confira o IA_MODELO no arquivo .env '
             "(ex.: gemini-3.5-flash-lite).")
+    if codigo in (500, 502, 503, 504):
+        # Ex. real (18/11/2026): 503 "gemini-3.8-flash is currently experiencing high demand".
+        return ErroIA(
+            f'O modelo "{modelo}" está sobrecarregado ou indisponível no Google neste momento '
+            f"({codigo}). Isso costuma ser passageiro: tente de novo em alguns minutos, troque o "
+            'IA_MODELO no .env ou use o botão "Copiar pergunta pronta".')
     return ErroIA(f"O Gemini devolveu um erro ({codigo or 'sem código'}). Tente de novo mais tarde.")

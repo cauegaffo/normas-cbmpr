@@ -345,9 +345,16 @@ scripts/           ← programas da Fase 1
     - 40 testes de unidade e o `AppTest` das duas abas;
     - uma chamada real com chave **falsa**, que mostrou a mensagem de chave recusada sem a chave no texto;
     - `avaliar_ia.py --sem-ia`: todas as normas esperadas estão entre os 20 trechos (a NPT 011 do guarda-corpo só no 8º).
+  - **`.env` criado pelo dono (18/11/2026).** A aba "Perguntar" funcionou.
+  - **Comparação de modelos (18/11/2026):**
+    - **`gemini-3.5-flash-lite`:** 8 de 9 respondidas, com 11 de 12 critérios ok e de 2 a 4 s por resposta.
+      - A pergunta 3 levou um **403 passageiro**: repetida, deu "5 m³ [NPT 022, item 5.8.1, pág. 12]".
+      - Na pergunta 4 (guarda-corpo), citou a NPT 002 e a NPT 012, e não a NPT 011.
+      - Na pergunta 6 (extintor), disse que a Tabela 1 da NPT 021 não estava nos trechos.
+    - **`gemini-3.8-flash`:** **503 "high demand"** em todas as perguntas, duas vezes seguidas. **Comparação pendente.**
+    - **Mensagens melhoradas:** 403 (pode ser passageiro) e 500/502/503/504 (modelo sobrecarregado).
   - **Falta:**
-    - o dono criar o `.env`;
-    - Claude rodar o `avaliar_ia.py` com `gemini-3.5-flash-lite` e com `gemini-3.8-flash` e comparar, para o dono escolher o modelo padrão;
+    - repetir o `gemini-3.8-flash` mais tarde e o dono escolher o modelo padrão;
     - o dono validar os casos 4 a 9 do `gabarito_perguntas.csv`.
 - **Próximo:**
   - o dono valida as normas esperadas dos 12 casos novos do gabarito, que foram escolhidas por Claude;
